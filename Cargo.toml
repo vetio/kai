@@ -1,0 +1,18 @@
+[package]
+name = "kai"
+version = "0.1.0"
+authors = ["Simon Roosen <simon@firepulse.de>"]
+
+[dependencies]
+bytes = "0.4.6"
+futures-await = { git = "https://github.com/ngg/futures-await", branch = "0.1", version = "0.1" }
+prost = "0.3.2"
+prost-derive = "0.3.2"
+serde = "1.0"
+serde_derive = "1.0.37"
+serde_json = "1.0"
+tokio = "0.1"
+tokio-io = "0.1"
+
+[dev-dependencies]
+proptest = "0.5.1"
