@@ -29,6 +29,6 @@ addons:
 after_success:
   - |
       if [[ "$TRAVIS_OS_NAME" == "linux" ]]; then
-        cargo install kcov
+        cargo install cargo-kcov
         cargo kcov
       fi
