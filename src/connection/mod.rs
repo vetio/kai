@@ -4,14 +4,13 @@ mod codec;
 use std::io;
 
 use futures::prelude::*;
-use tokio_io::{AsyncRead, AsyncWrite, codec::Framed};
+use tokio_io::{AsyncRead, AsyncWrite};
+use tokio_io::codec::Framed;
 
 use schema;
 
-trait RpcConnection
-where
-    Self: Sized + Sink<SinkItem = schema::Request> + Stream<Item = schema::Response>,
-{
+pub trait RpcConnection {
+    fn call(self, r: schema::Request) -> Box<Future<Item = (schema::Response, Self), Error = io::Error> + Send>;
 }
 
 pub struct TokioConnection<A> {
@@ -111,5 +110,22 @@ where
 
         let response = schema::Response::decode(inner_item)?;
         Ok(Async::Ready(Some(response)))
+    }
+}
+
+impl<A> RpcConnection for TokioConnection<A>
+where
+    A: AsyncRead + AsyncWrite + Send + 'static,
+{
+    fn call(
+        self,
+        r: schema::Request,
+    ) -> Box<Future<Item = (schema::Response, Self), Error = io::Error> + Send> {
+        Box::new(async_block! {
+            let s = await!(self.send(r))?;
+            let (response, s) = await!(s.into_future()).map_err(|(e, _)| e)?;
+            let response = response.ok_or_else(|| io::Error::new(io::ErrorKind::Other, "No Response"))?;
+            Ok((response, s))
+        })
     }
 }

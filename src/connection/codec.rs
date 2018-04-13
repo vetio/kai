@@ -55,8 +55,8 @@ mod test {
 
     #[test]
     fn test_varint_framed_roundtrip() {
-        // ref v in any::<Vec<u8>>()
         let mut runner = TestRunner::default();
+        runner.set_source_file(::std::path::Path::new(file!()));
         runner
             .run(&any::<Vec<u8>>(), |v| {
                 use tokio_io::codec::{Decoder, Encoder};
@@ -69,12 +69,12 @@ mod test {
                 // Incomplete
                 let len = buffer.len();
                 let tail = buffer.split_off(len / 2);
-                let result = codec.decode(&mut buffer);
-                assert!(result.unwrap().is_none());
+                let result = codec.decode(&mut buffer)?;
+                assert!(result.is_none());
 
                 // Complete
                 buffer.unsplit(tail);
-                let result = codec.decode(&mut buffer).unwrap().unwrap();
+                let result = codec.decode(&mut buffer)?.unwrap();
                 assert_eq!(v, &result.into_iter().collect::<Vec<u8>>());
 
                 Ok(())

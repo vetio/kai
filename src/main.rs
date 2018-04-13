@@ -20,12 +20,14 @@ extern crate proptest;
 use futures::prelude::*;
 use tokio::io;
 
-mod connection;
+pub mod connection;
 mod schema;
 
 #[async]
 fn run() -> io::Result<()> {
     use std::net::SocketAddr;
+    use connection::RpcConnection;
+    use prost::Message;
 
     let addr = "127.0.0.1:50000".parse::<SocketAddr>().unwrap();
 
@@ -45,12 +47,7 @@ fn run() -> io::Result<()> {
     };
 
     println!("Sending request: {:#?}", request);
-    let c = await!(c.send(request))?;
-    println!("Send request");
-
-    let (response, c) = await!(c.into_future()).map_err(|(e, _)| e)?;
-    let response: schema::Response =
-        response.ok_or_else(|| io::Error::new(io::ErrorKind::Other, "No response"))?;
+    let (response, c) = await!(c.call(request))?;
     println!("Response: {:#?}", response);
 
     let status = schema::Status::decode(&response.results[0].value);
@@ -67,13 +64,7 @@ fn run() -> io::Result<()> {
     };
 
     println!("Sending request: {:#?}", request);
-    let c = await!(c.send(request))?;
-    println!("Send request");
-    use prost::Message;
-
-    let (response, c) = await!(c.into_future()).map_err(|(e, _)| e)?;
-    let response: schema::Response =
-        response.ok_or_else(|| io::Error::new(io::ErrorKind::Other, "No response"))?;
+    let (response, c) = await!(c.call(request))?;
 
     let services = schema::Services::decode(&response.results[0].value).unwrap();
 
