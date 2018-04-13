@@ -5,7 +5,7 @@ authors = ["Simon Roosen <simon@firepulse.de>"]
 
 [dependencies]
 bytes = "0.4.6"
-futures-await = { git = "https://github.com/ngg/futures-await", branch = "0.1", version = "0.1" }
+futures-await = "0.1.0"
 prost = "0.3.2"
 prost-derive = "0.3.2"
 serde = "1.0"
