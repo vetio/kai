@@ -199,83 +199,87 @@ mod tests {
 
     #[test]
     fn test_echo() {
-        run_test(&any::<u32>(), |v| {
-            #[derive(Debug)]
-            struct MockConnection;
-            impl RpcConnection for MockConnection {
-                fn call(
-                    self,
-                    r: ::schema::Request,
-                ) -> Box<
-                    Future<Item = (::schema::Response, Self), Error = ::std::io::Error>
-                        + ::std::marker::Send,
-                > {
-                    let mut call = extract_call(r);
-                    assert_eq!(1, call.arguments.len());
-
-                    let argument = call.arguments.pop().unwrap();
-                    assert_eq!(0, argument.position);
-
-                    use prost::Message;
-
-                    let arg = u32::decode(argument.value).unwrap();
-
-                    let mut encoded = Vec::new();
-                    arg.encode(&mut encoded).unwrap();
-
-                    Box::new(::futures::future::ok((
-                        ::schema::Response {
-                            error: None,
-                            results: vec![::schema::ProcedureResult {
-                                error: None,
-                                value: encoded,
-                            }],
-                        },
+        run_test(
+            &any::<u32>(),
+            |v| {
+                #[derive(Debug)]
+                struct MockConnection;
+                impl RpcConnection for MockConnection {
+                    fn call(
                         self,
-                    )))
-                }
-            }
+                        r: ::schema::Request,
+                    ) -> Box<
+                        Future<Item = (::schema::Response, Self), Error = ::std::io::Error>
+                            + ::std::marker::Send,
+                    > {
+                        let mut call = extract_call(r);
+                        assert_eq!(1, call.arguments.len());
 
-            #[derive(Debug, Eq, PartialEq)]
-            struct MockRequest {
-                data: u32,
-            }
+                        let argument = call.arguments.pop().unwrap();
+                        assert_eq!(0, argument.position);
 
-            impl ProcedureCall for MockRequest {
-                type Result = u32;
-                type Error = SimpleResultError;
-            }
+                        use prost::Message;
 
-            impl From<MockRequest> for ::schema::ProcedureCall {
-                fn from(r: MockRequest) -> Self {
-                    use prost::Message;
+                        let arg = u32::decode(argument.value).unwrap();
 
-                    let mut buffer = Vec::new();
+                        let mut encoded = Vec::new();
+                        arg.encode(&mut encoded).unwrap();
 
-                    r.data.encode(&mut buffer).unwrap();
-
-                    ::schema::ProcedureCall {
-                        service: String::from(MOCK_SERVICE),
-                        procedure: String::from(MOCK_PROCEDURE),
-                        arguments: vec![::schema::Argument {
-                            position: 0,
-                            value: buffer,
-                        }],
-                        ..Default::default()
+                        Box::new(::futures::future::ok((
+                            ::schema::Response {
+                                error: None,
+                                results: vec![::schema::ProcedureResult {
+                                    error: None,
+                                    value: encoded,
+                                }],
+                            },
+                            self,
+                        )))
                     }
                 }
-            }
 
-            let request = MockRequest { data: *v };
+                #[derive(Debug, Eq, PartialEq)]
+                struct MockRequest {
+                    data: u32,
+                }
 
-            let server = Server::new(MockConnection);
+                impl ProcedureCall for MockRequest {
+                    type Result = u32;
+                    type Error = SimpleResultError;
+                }
 
-            let (result, _) = server.invoke(request).wait().unwrap();
+                impl From<MockRequest> for ::schema::ProcedureCall {
+                    fn from(r: MockRequest) -> Self {
+                        use prost::Message;
 
-            prop_assert_eq!(*v, result);
+                        let mut buffer = Vec::new();
 
-            Ok(())
-        }, file!()).unwrap();
+                        r.data.encode(&mut buffer).unwrap();
+
+                        ::schema::ProcedureCall {
+                            service: String::from(MOCK_SERVICE),
+                            procedure: String::from(MOCK_PROCEDURE),
+                            arguments: vec![::schema::Argument {
+                                position: 0,
+                                value: buffer,
+                            }],
+                            ..Default::default()
+                        }
+                    }
+                }
+
+                let request = MockRequest { data: *v };
+
+                let server = Server::new(MockConnection);
+
+                let (result, _) = server.invoke(request).wait().unwrap();
+
+                prop_assert_eq!(*v, result);
+
+                Ok(())
+            },
+            file!(),
+        ).unwrap();
     }
 
     fn extract_call(mut request: ::schema::Request) -> ::schema::ProcedureCall {

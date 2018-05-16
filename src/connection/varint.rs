@@ -106,7 +106,9 @@ mod test {
     #[test]
     fn test_varint_framed_roundtrip() {
         // ref v in any::<Vec<u8>>()
-        run_test(&any::<u32>(), |&value| {
+        run_test(
+            &any::<u32>(),
+            |&value| {
                 let mut buf = BytesMut::new();
                 encode_varint(&mut buf, value);
                 let bytes = buf.len();
@@ -116,7 +118,8 @@ mod test {
                 prop_assert_eq!(expected, decoded, "i = {}, buf = {:?}", value, buf);
 
                 Ok(())
-            }, file!())
-            .unwrap();
+            },
+            file!(),
+        ).unwrap();
     }
 }

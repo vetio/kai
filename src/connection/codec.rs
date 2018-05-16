@@ -58,7 +58,9 @@ mod test {
 
     #[test]
     fn test_varint_framed_roundtrip() {
-        run_test(&any::<Vec<u8>>(), |v| {
+        run_test(
+            &any::<Vec<u8>>(),
+            |v| {
                 use tokio_io::codec::{Decoder, Encoder};
 
                 let mut codec = VarintFramedCodec;
@@ -78,7 +80,8 @@ mod test {
                 assert_eq!(v, &result.into_iter().collect::<Vec<u8>>());
 
                 Ok(())
-            }, file!())
-            .unwrap();
+            },
+            file!(),
+        ).unwrap();
     }
 }
