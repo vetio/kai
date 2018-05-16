@@ -1,18 +1,22 @@
-mod varint;
 mod codec;
+mod varint;
 
 use std::io;
 
 use futures::prelude::*;
-use tokio_io::{AsyncRead, AsyncWrite};
 use tokio_io::codec::Framed;
+use tokio_io::{AsyncRead, AsyncWrite};
 
 use schema;
 
-pub trait RpcConnection {
-    fn call(self, r: schema::Request) -> Box<Future<Item = (schema::Response, Self), Error = io::Error> + Send>;
+pub trait RpcConnection: 'static {
+    fn call(
+        self,
+        r: schema::Request,
+    ) -> Box<Future<Item = (schema::Response, Self), Error = io::Error> + Send>;
 }
 
+#[derive(Debug)]
 pub struct TokioConnection<A> {
     inner: Framed<A, codec::VarintFramedCodec>,
     handshake_response: schema::ConnectionResponse,
@@ -35,8 +39,8 @@ fn do_handshake<A>(t: Framed<A, codec::VarintFramedCodec>) -> io::Result<TokioCo
 where
     A: AsyncRead + AsyncWrite + 'static,
 {
-    use prost::Message;
     use futures::Sink;
+    use prost::Message;
 
     let request = schema::ConnectionRequest {
         type_: schema::connection_request::Type::Rpc.into(),

@@ -5,6 +5,7 @@ authors = ["Simon Roosen <simon@firepulse.de>"]
 
 [dependencies]
 bytes = "0.4.6"
+failure = "0.1.1"
 futures-await = "0.1.0"
 prost = "0.3.2"
 prost-derive = "0.3.2"
@@ -15,4 +16,4 @@ tokio = "0.1"
 tokio-io = "0.1"
 
 [dev-dependencies]
-proptest = "0.5.1"
+proptest = "0.7"

@@ -5,6 +5,7 @@ use tokio_io::codec;
 
 use super::varint::*;
 
+#[derive(Debug)]
 pub struct VarintFramedCodec;
 
 impl codec::Encoder for VarintFramedCodec {
@@ -16,7 +17,7 @@ impl codec::Encoder for VarintFramedCodec {
 
         let len = item.len();
         if len > u32::max_value() as usize {
-            panic!("message too long");
+            return Err(io::Error::new(io::ErrorKind::Other, "message too long"));
         }
         dst.reserve(len + 5);
         super::varint::encode_varint(dst, len as u32);
@@ -32,7 +33,9 @@ impl codec::Decoder for VarintFramedCodec {
     fn decode(&mut self, src: &mut BytesMut) -> Result<Option<BytesMut>, io::Error> {
         match try_decode_varint(&*src) {
             DecodedVarint::NotEnough => Ok(None),
-            DecodedVarint::Invalid => panic!("ERROR"),
+            DecodedVarint::Invalid => {
+                Err(io::Error::new(io::ErrorKind::Other, "Invalid frame length"))
+            }
             DecodedVarint::Ok { value, bytes } => {
                 let value = value as usize;
                 let total_len = value + bytes;
@@ -51,14 +54,11 @@ impl codec::Decoder for VarintFramedCodec {
 mod test {
     use super::*;
     use proptest::prelude::*;
-    use proptest::test_runner::TestRunner;
+    use tests::run_test;
 
     #[test]
     fn test_varint_framed_roundtrip() {
-        let mut runner = TestRunner::default();
-        runner.set_source_file(::std::path::Path::new(file!()));
-        runner
-            .run(&any::<Vec<u8>>(), |v| {
+        run_test(&any::<Vec<u8>>(), |v| {
                 use tokio_io::codec::{Decoder, Encoder};
 
                 let mut codec = VarintFramedCodec;
@@ -78,7 +78,7 @@ mod test {
                 assert_eq!(v, &result.into_iter().collect::<Vec<u8>>());
 
                 Ok(())
-            })
+            }, file!())
             .unwrap();
     }
 }

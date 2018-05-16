@@ -55,7 +55,7 @@ pub(crate) fn encode_varint(buf: &mut BytesMut, mut val: u32) {
 mod test {
     use super::*;
     use proptest::prelude::*;
-    use proptest::test_runner::TestRunner;
+    use tests::run_test;
 
     #[test]
     fn test_try_decode_varint() {
@@ -94,9 +94,7 @@ mod test {
             }
         );
         assert_eq!(
-            try_decode_varint(&[
-                0b11111111, 0b11111111, 0b11111111, 0b11111111, 0b11111111, 0
-            ]),
+            try_decode_varint(&[0b11111111, 0b11111111, 0b11111111, 0b11111111, 0b11111111, 0,]),
             DecodedVarint::Invalid
         );
         assert_eq!(
@@ -108,10 +106,7 @@ mod test {
     #[test]
     fn test_varint_framed_roundtrip() {
         // ref v in any::<Vec<u8>>()
-        let mut runner = TestRunner::default();
-        runner.set_source_file(::std::path::Path::new(file!()));
-        runner
-            .run(&any::<u32>(), |&value| {
+        run_test(&any::<u32>(), |&value| {
                 let mut buf = BytesMut::new();
                 encode_varint(&mut buf, value);
                 let bytes = buf.len();
@@ -121,7 +116,7 @@ mod test {
                 prop_assert_eq!(expected, decoded, "i = {}, buf = {:?}", value, buf);
 
                 Ok(())
-            })
+            }, file!())
             .unwrap();
     }
 }
